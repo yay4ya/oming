@@ -29,9 +29,12 @@ jobs:
         run: pipx run scripts/scheduler.py
 
       - name: Create orphan branch and push
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git checkout --orphan schedule-temp
           git rm -rf . || true
           git add schedule.json
           git commit -m "Update schedule.json"
+          git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}.git
           git push -f origin HEAD:schedule
