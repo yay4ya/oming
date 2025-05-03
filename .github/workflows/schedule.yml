@@ -18,11 +18,12 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-      - name: Fetch latest schedule
+      - name: Fetch latest schedule if exists
         run: |
-          git fetch origin schedule
-          mkdir -p prev_json
-          git checkout origin/schedule -- schedule.json
+          git fetch origin schedule || true
+          if git ls-remote --exit-code origin schedule; then
+            git checkout origin/schedule -- schedule.json
+          fi
 
       - name: Run scheduler
         run: pipx run scripts/scheduler.py
