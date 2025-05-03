@@ -2,7 +2,7 @@ function App() {
   return (
     <>
       <div>
-        <h1>Oming</h1>
+        <h1 className="text-3xl font-bold">Oming</h1>
       </div>
     </>
   )
