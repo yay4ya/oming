@@ -1,0 +1,36 @@
+name: scheduler
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  generate-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Fetch latest schedule
+        run: |
+          git fetch origin schedule
+          mkdir -p prev_json
+          git checkout origin/schedule -- schedule.json
+
+      - name: Run scheduler
+        run: pipx run scripts/scheduler.py
+
+      - name: Create orphan branch and push
+        run: |
+          git checkout --orphan schedule-temp
+          git rm -rf . || true
+          git add schedule.json
+          git commit -m "Update schedule.json"
+          git push -f origin HEAD:schedule
