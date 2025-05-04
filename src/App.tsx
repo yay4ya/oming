@@ -1,8 +1,10 @@
 import React from 'react'
 import YouTube, { type YouTubeEvent, type YouTubePlayer } from 'react-youtube'
 import { atom, useAtom } from 'jotai'
+import { ListVideoIcon, VolumeXIcon, VolumeIcon as Volume0Icon, Volume1Icon, Volume2Icon } from 'lucide-react'
 
-import { useInterval, useResizeObserver } from '@/hooks'
+import { useInterval } from '@/hooks'
+import iconLarge from '@/assets/icon_large.png'
 
 const SCHEDULE_URL = 'https://gist.githubusercontent.com/yay4ya/223a7744bc0003e4dcef84b60cd9352f/raw/f13963f17980c70365916acf074f623f955dc101/oming.json'
 
@@ -114,6 +116,84 @@ function getThumbnailURL(videoId: string): string {
   return `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`
 }
 
+function formatTime(seconds: number): string {
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = Math.floor(seconds % 60)
+  return `${hours > 0 ? `${hours}:` : ''}${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+}
+
+function VolumeControl({ player, ...props }: React.HTMLProps<HTMLDivElement> & { player?: YouTubePlayer }) {
+  const [volume, setVolume] = React.useState(player?.getVolume() ?? 100)
+  const [mute, setMute] = React.useState(player?.isMuted() ?? false)
+  const [showVolume, setShowVolume] = React.useState(false)
+
+  React.useEffect(() => {
+    if (player) {
+      setVolume(player.getVolume())
+    }
+  }, [player])
+
+  const handleVolumeChange = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseInt(event.target.value, 10)
+    setVolume(newVolume)
+    if (player && player.g) {
+      player.setVolume(newVolume)
+    }
+  }, [player])
+
+  const VolumeIcon = React.useMemo(() => {
+    if (mute) return VolumeXIcon
+    if (volume > 66) {
+      return Volume2Icon
+    } else if (volume > 33) {
+      return Volume1Icon
+    } else if (volume > 0) {
+      return Volume0Icon
+    }
+    return VolumeXIcon
+  }, [volume, mute])
+
+  React.useEffect(() => {
+    if (player && player.g) {
+      if (mute) player.mute()
+      else player.unMute()
+    }
+  }, [player, mute])
+
+  return (
+    <div {...props}>
+      <VolumeIcon
+        className="w-full h-full z-10 relative cursor-pointer"
+        onMouseEnter={() => setShowVolume(true)}
+        onClick={() => setMute((prev: boolean) => !prev)}
+      />
+      <div
+        className="relative w-full h-full"
+        style={{ display: showVolume ? 'block' : 'none' }}
+        onMouseLeave={() => setShowVolume(false)}
+      >
+        <div className="absolute bottom-1/2 -left-1/2 bg-white/40 rounded-lg backdrop-blur-lg shadow-xl w-fit">
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={mute ? 0 : volume}
+            disabled={mute}
+            onChange={handleVolumeChange}
+            className="h-[100px] w-[3rem] cursor-pointer mt-[1rem] mb-[3rem] relative "
+            style={{
+              writingMode: 'vertical-lr',
+              direction: 'rtl',
+              verticalAlign: 'middle',
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function App() {
   const [schedule, refreshSchedule] = useAtom(scheduleAtom)
   const [videoTime, setVideoTime] = React.useState(0)
@@ -205,13 +285,21 @@ function App() {
                 />
               </div>
               <div
-                className="shrink-0 h-16 w-full flex items-center justify-start rounded-lg m-auto p-4 shadow-2xl bg-white/40 backdrop-blur-3xl border border-white"
+                className="shrink-0 h-16 w-full flex items-center justify-start rounded-lg m-auto p-4 shadow-2xl bg-white/40 backdrop-blur-3xl border border-white text-gray-700"
                 style={{ maxWidth: 'calc((100vh - 7rem) * 16 / 9)' }}
 
               >
+                <img src={iconLarge} alt="Icon" className="w-12 h-12 mr-4 rounded-lg border border-gray-200" />
                 <a href={getVideoURL(liveEntry.video.id)} target="_blank" rel="noopener noreferrer">
                   {liveEntry.video.title}
                 </a>
+                <div className="flex-1 flex items-center justify-end gap-8">
+                  <p className="text-gray-500 mr-1 text-sm">
+                    {formatTime(videoTime)} / {formatTime(videoDurationSeconds(liveEntry.video))}
+                  </p>
+                  <VolumeControl player={playerRef.current} className="w-6 h-6" />
+                  <ListVideoIcon className="w-6 h-6 " />
+                </div>
               </div>
             </div>
           </>
