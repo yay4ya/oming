@@ -112,8 +112,8 @@ function getVideoURL(videoId: string): string {
   return `https://www.youtube.com/watch?v=${videoId}`
 }
 
-function getThumbnailURL(videoId: string): string {
-  return `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`
+function getThumbnailURL(videoId: string, res?: string): string {
+  return `https://i.ytimg.com/vi/${videoId}/${res ?? 'maxresdefault'}.jpg`
 }
 
 function formatTime(seconds: number): string {
@@ -121,6 +121,14 @@ function formatTime(seconds: number): string {
   const minutes = Math.floor((seconds % 3600) / 60)
   const secs = Math.floor(seconds % 60)
   return `${hours > 0 ? `${hours}:` : ''}${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+}
+
+function formatDate(date: Date): string {
+  const month = date.getMonth() + 1
+  const dt = date.getDate()
+  const hours = ('0' + date.getHours()).slice(-2)
+  const minutes = ('0' + date.getMinutes()).slice(-2)
+  return `${month}/${dt}  ${hours}:${minutes}`
 }
 
 function VolumeControl({ player, ...props }: React.HTMLProps<HTMLDivElement> & { player?: YouTubePlayer }) {
@@ -164,7 +172,7 @@ function VolumeControl({ player, ...props }: React.HTMLProps<HTMLDivElement> & {
   return (
     <div {...props}>
       <VolumeIcon
-        className="w-full h-full z-10 relative cursor-pointer"
+        className="z-10 relative cursor-pointer"
         onMouseEnter={() => setShowVolume(true)}
         onClick={() => setMute((prev: boolean) => !prev)}
       />
@@ -173,7 +181,7 @@ function VolumeControl({ player, ...props }: React.HTMLProps<HTMLDivElement> & {
         style={{ display: showVolume ? 'block' : 'none' }}
         onMouseLeave={() => setShowVolume(false)}
       >
-        <div className="absolute bottom-1/2 -left-1/2 bg-white/40 rounded-lg backdrop-blur-lg shadow-xl w-fit">
+        <div className="absolute bottom-1/2 -left-1/2 bg-white/10 border border-white/40 rounded-lg backdrop-blur-lg shadow-xl w-fit">
           <input
             type="range"
             min="0"
@@ -191,6 +199,60 @@ function VolumeControl({ player, ...props }: React.HTMLProps<HTMLDivElement> & {
         </div>
       </div>
     </div>
+  )
+}
+
+function ScheduleList({ schedule, ...props }: React.HTMLProps<HTMLDivElement> & { schedule: Schedule }) {
+  const [show, setShow] = React.useState(false)
+
+  const liveEntry = React.useMemo(() => {
+    return getLiveEntry(schedule)
+  }, [schedule])
+
+  React.useEffect(() => {
+    if (show) {
+      const liveEntryElement = document.querySelector(`div[data-live="true"]`)
+      console.log(liveEntryElement)
+      if (liveEntryElement) {
+        liveEntryElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }
+  }, [show])
+
+  return (
+    <div {...props}>
+      <ListVideoIcon
+        className="w-6 h-6 cursor-pointer"
+        onClick={() => setShow(prev => !prev)}
+      />
+      <div
+        className="fixed bottom-[70px] right-0 w-full max-w-[500px] h-[500px] bg-white/40 backdrop-blur-xl border border-white/40 shadow-xl rounded-xl"
+        style={{ display: show ? 'block' : 'none', maxHeight: 'calc(100vh - 150px)' }}
+      >
+        <div className="relative h-full overflow-y-auto p-4">
+          {schedule.entries.map(entry => (
+            <div
+              key={entry.video.id}
+              className={`mt-2 h-[5rem] flex gap-2 items-center px-3 py-2 rounded-lg ${liveEntry?.video.id == entry.video.id ? 'bg-white/50' : ''}`}
+              data-live={liveEntry?.video.id == entry.video.id}
+            >
+              <div className="shrink-0 w-[100px]">
+                <img
+                  src={getThumbnailURL(entry.video.id, 'default')}
+                  className="aspect-video object-cover overflow-hidden rounded-lg"
+                  width={100}
+                />
+              </div>
+              <div>
+                <div className="text-xs text-gray-600 ml-2">{formatDate(entryStart(entry))}</div>
+                <div className="text-sm mt-1 line-clamp-2">{entry.video.title}</div>
+              </div>
+            </div>
+
+          ))}
+        </div>
+      </div >
+    </div >
   )
 }
 
@@ -241,6 +303,7 @@ function App() {
 
   const handleVideoEnd = React.useCallback(() => {
     refreshSchedule()
+    setDoSync(true)
   }, [refreshSchedule])
 
   useInterval(() => {
@@ -285,20 +348,20 @@ function App() {
                 />
               </div>
               <div
-                className="shrink-0 h-16 w-full flex items-center justify-start rounded-lg m-auto p-4 shadow-2xl bg-white/40 backdrop-blur-3xl border border-white text-gray-700"
+                className="shrink-0 h-16 w-full flex items-center justify-start rounded-lg m-auto p-4 shadow-2xl bg-white/40 backdrop-blur-3xl border border-white/40 text-gray-700 gap-4"
                 style={{ maxWidth: 'calc((100vh - 7rem) * 16 / 9)' }}
 
               >
-                <img src={iconLarge} alt="Icon" className="w-12 h-12 mr-4 rounded-lg border border-gray-200" />
-                <a href={getVideoURL(liveEntry.video.id)} target="_blank" rel="noopener noreferrer">
+                <img src={iconLarge} alt="Icon" className="w-12 h-12 rounded-lg border border-gray-200" />
+                <a href={getVideoURL(liveEntry.video.id)} target="_blank" rel="noopener noreferrer" className="line-clamp-1">
                   {liveEntry.video.title}
                 </a>
                 <div className="flex-1 flex items-center justify-end gap-8">
-                  <p className="text-gray-500 mr-1 text-sm">
+                  <p className="text-gray-500 mr-1 text-sm text-nowrap w-fit shrink-0 md:block hidden">
                     {formatTime(videoTime)} / {formatTime(videoDurationSeconds(liveEntry.video))}
                   </p>
                   <VolumeControl player={playerRef.current} className="w-6 h-6" />
-                  <ListVideoIcon className="w-6 h-6 " />
+                  <ScheduleList className="w-6 h-6 " schedule={schedule} />
                 </div>
               </div>
             </div>
