@@ -2,7 +2,7 @@ import React from 'react'
 import YouTube, { type YouTubeEvent, type YouTubePlayer } from 'react-youtube'
 import { atom, useAtom } from 'jotai'
 
-import { useInterval } from '@/hooks'
+import { useInterval, useResizeObserver } from '@/hooks'
 
 const SCHEDULE_URL = 'https://gist.githubusercontent.com/yay4ya/223a7744bc0003e4dcef84b60cd9352f/raw/f13963f17980c70365916acf074f623f955dc101/oming.json'
 
@@ -176,34 +176,21 @@ function App() {
 
   return (
     <>
-      <div className="w-screen h-screen overflow-hidden flex flex-col">
+      <div className="w-screen h-screen relative overflow-hidden flex items-center justify-center">
         {liveEntry ? (
           <>
             <div className="absolute top-0 left-0 w-screen h-screen z-[-1] opacity-40">
               <img
-                className="object-cover w-full h-full blur-xl brightness-110"
+                className="object-cover w-full h-full blur-xl brightness-120"
                 src={getThumbnailURL(liveEntry.video.id)}
                 alt="Live stream thumbnail"
               />
             </div>
-            <div className="w-full h-full">
-              <div
-                className="w-full h-full aspect-video m-auto"
-                style={{
-                  maxHeight: 'calc(100vh - 5rem)',
-                  maxWidth: 'calc((100vh - 6rem) * 16 / 9)',
-                }}
-              >
+            <div className="w-full h-fit max-h-full max-w-full flex flex-col p-4 gap-4 m-auto">
+              <div className="w-full h-full aspect-video overflow-hidden">
                 <YouTube
-                  iframeClassName="w-full h-full shadow-2xl rounded-xl aspect-video"
-                  className="py-4"
-                  style={{
-                    width: '100%',
-                    margin: 'auto',
-                    height: 'calc(100vw * 9 / 16)',
-                    maxHeight: 'calc(100vh - 5rem)',
-                    maxWidth: 'calc((100vh - 6rem) * 16 / 9)',
-                  }}
+                  className="w-full h-full overflow-hidden"
+                  iframeClassName="w-fit h-full rounded-xl aspect-video m-auto overflow-hidden"
                   videoId={liveEntry.video.id}
                   opts={{
                     playerVars: {
@@ -218,24 +205,20 @@ function App() {
                 />
               </div>
               <div
-                className="shrink-0 h-[4rem] flex items-center justify-start rounded-lg m-auto p-4 shadow-2xl bg-white/40 backdrop-blur-3xl border border-white"
-                style={{
-                  maxWidth: 'calc((100vh - 6rem) * 16 / 9)',
-                }}
+                className="shrink-0 h-16 w-full flex items-center justify-start rounded-lg m-auto p-4 shadow-2xl bg-white/40 backdrop-blur-3xl border border-white"
+                style={{ maxWidth: 'calc((100vh - 7rem) * 16 / 9)' }}
+
               >
                 <a href={getVideoURL(liveEntry.video.id)} target="_blank" rel="noopener noreferrer">
                   {liveEntry.video.title}
                 </a>
-                <span className="text-gray-500 text-sm ml-2">
-                  {videoTime.toFixed(0)}
-                </span>
               </div>
             </div>
           </>
         ) : (
           <p>No live stream currently.</p>
         )}
-      </div>
+      </div >
     </>
   )
 }
