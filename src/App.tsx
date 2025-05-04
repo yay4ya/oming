@@ -1,7 +1,43 @@
 import React from 'react'
-import YouTube from 'react-youtube'
+import YouTube, { type YouTubeEvent, type YouTubePlayer } from 'react-youtube'
+import { atom, useAtom } from 'jotai'
 
-const SCHEDULE_URL = 'https://raw.githubusercontent.com/yay4ya/oming/refs/heads/schedule/schedule.json?token=GHSAT0AAAAAADDIE2U2WSC7FI72O5SIA5QE2AWRCDQ'
+import { useInterval } from '@/hooks'
+
+const SCHEDULE_URL = 'https://gist.githubusercontent.com/yay4ya/223a7744bc0003e4dcef84b60cd9352f/raw/f13963f17980c70365916acf074f623f955dc101/oming.json'
+
+const scheduleDataAtom = atom<Schedule | null>(null)
+const scheduleAtom = atom(
+  async (get) => {
+    const prev = get(scheduleDataAtom)
+    if (prev !== null) {
+      const now = getCurrentTime()
+      if (now < scheduleEnd(prev)) {
+        return Promise.resolve(prev)
+      }
+    }
+    const response = await fetch(SCHEDULE_URL)
+    if (!response.ok) {
+      throw new Error('Failed to fetch schedule')
+    }
+    return await response.json() as Schedule
+  },
+  async (get, set) => {
+    const prev = get(scheduleDataAtom)
+    if (prev !== null) {
+      const now = getCurrentTime()
+      if (now < scheduleEnd(prev)) {
+        return
+      }
+    }
+    const response = await fetch(SCHEDULE_URL)
+    if (!response.ok) {
+      throw new Error('Failed to fetch schedule')
+    }
+    const newSchedule = await response.json() as Schedule
+    set(scheduleDataAtom, newSchedule)
+  }
+)
 
 interface Video {
   id: string
@@ -24,6 +60,20 @@ function entryStart(entry: ScheduleEntry): Date {
     throw new Error(`Invalid start time format: ${entry.start}`)
   }
   return startTime
+}
+
+function entryEnd(entry: ScheduleEntry): Date {
+  const startTime = entryStart(entry)
+  const duration = videoDurationSeconds(entry.video)
+  return new Date(startTime.getTime() + duration * 1000)
+}
+
+function scheduleEnd(schedule: Schedule): Date {
+  const lastEntry = schedule.entries[schedule.entries.length - 1]
+  if (!lastEntry) {
+    throw new Error('Schedule is empty')
+  }
+  return entryEnd(lastEntry)
 }
 
 function videoDurationSeconds(video: Video): number {
@@ -65,35 +115,64 @@ function getThumbnailURL(videoId: string): string {
 }
 
 function App() {
-  const [schedule, setSchedule] = React.useState<Schedule>()
-
-  const fetchSchedule = React.useCallback(async () => {
-    const response = await fetch(SCHEDULE_URL)
-    if (!response.ok) {
-      throw new Error('Network response was not ok')
-    }
-    const data: Schedule = await response.json()
-    setSchedule(data)
-  }, [])
-
-  React.useEffect(() => {
-    fetchSchedule()
-  }, [])
+  const [schedule, refreshSchedule] = useAtom(scheduleAtom)
+  const [videoTime, setVideoTime] = React.useState(0)
+  const [doSync, setDoSync] = React.useState(false)
+  const playerRef = React.useRef<YouTubePlayer | null>(null)
 
   const liveEntry = React.useMemo(() => {
     if (!schedule) return null
     return getLiveEntry(schedule)
   }, [schedule])
 
-  const liveVideoElapsedSeconds = React.useMemo(() => {
+  const getLiveVideoElapsedSeconds = React.useCallback(() => {
     if (!liveEntry) return 0
     const startTime = entryStart(liveEntry)
-    const videoDuration = videoDurationSeconds(liveEntry.video)
     const currentTime = getCurrentTime()
-    const elapsedSeconds = Math.floor((currentTime.getTime() - startTime.getTime()) / 1000)
-    return Math.min(elapsedSeconds, videoDuration)
+    return (currentTime.getTime() - startTime.getTime()) / 1000
   }, [liveEntry])
 
+  const syncVideoTime = React.useCallback(() => {
+    if (!playerRef.current) return
+    const duration = playerRef.current.getDuration()
+    const elapsedSeconds = getLiveVideoElapsedSeconds()
+    if (elapsedSeconds > duration) {
+      refreshSchedule()
+    } else {
+      playerRef.current.seekTo(elapsedSeconds)
+    }
+  }, [getLiveVideoElapsedSeconds, refreshSchedule])
+
+  const handleVideoReady = React.useCallback((event: YouTubeEvent) => {
+    playerRef.current = event.target
+    setDoSync(true)
+  }, [getLiveVideoElapsedSeconds])
+
+  const handleVideoPlay = React.useCallback((_event: YouTubeEvent) => {
+    if (doSync) {
+      syncVideoTime()
+      setDoSync(false)
+    }
+  }, [doSync, syncVideoTime])
+
+  const handleVideoPause = React.useCallback((_event: YouTubeEvent) => {
+    setDoSync(true)
+  }, [])
+
+  const handleVideoEnd = React.useCallback(() => {
+    refreshSchedule()
+  }, [refreshSchedule])
+
+  useInterval(() => {
+    setVideoTime(playerRef.current?.getCurrentTime() ?? 0)
+  }, 500);
+
+  React.useEffect(() => {
+    const liveTime = getLiveVideoElapsedSeconds()
+    if (Math.abs(videoTime - liveTime) > 60) {
+      syncVideoTime()
+    }
+  }, [videoTime, getLiveVideoElapsedSeconds])
 
   return (
     <>
@@ -117,7 +196,7 @@ function App() {
               >
                 <YouTube
                   iframeClassName="w-full h-full shadow-2xl rounded-xl aspect-video"
-                  className="p-4"
+                  className="py-4"
                   style={{
                     width: '100%',
                     margin: 'auto',
@@ -130,15 +209,16 @@ function App() {
                     playerVars: {
                       autoplay: 1,
                       controls: 0,
-                      start: liveVideoElapsedSeconds,
                     },
                   }}
-                  onPlay={fetchSchedule}
-                  onEnd={fetchSchedule}
+                  onReady={handleVideoReady}
+                  onPlay={handleVideoPlay}
+                  onPause={handleVideoPause}
+                  onEnd={handleVideoEnd}
                 />
               </div>
               <div
-                className="shrink-0 h-[4rem] flex items-center justify-start rounded-xl m-auto p-4 shadow-2xl bg-white/30 backdrop-blur-3xl border border-gray-100"
+                className="shrink-0 h-[4rem] flex items-center justify-start rounded-lg m-auto p-4 shadow-2xl bg-white/40 backdrop-blur-3xl border border-white"
                 style={{
                   maxWidth: 'calc((100vh - 6rem) * 16 / 9)',
                 }}
@@ -146,6 +226,9 @@ function App() {
                 <a href={getVideoURL(liveEntry.video.id)} target="_blank" rel="noopener noreferrer">
                   {liveEntry.video.title}
                 </a>
+                <span className="text-gray-500 text-sm ml-2">
+                  {videoTime.toFixed(0)}
+                </span>
               </div>
             </div>
           </>
