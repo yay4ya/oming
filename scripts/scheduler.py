@@ -18,7 +18,8 @@ from pydantic import BaseModel, AfterValidator
 CHANNEL_ID: Final = "UC1cnByKe24JjTv38tH_7BYw"
 TIME_ZONE: Final = datetime.timezone.utc
 SCHEDULE_PATH: Final = Path("schedule.json")
-SCHEDULE_MARGIN: Final = datetime.timedelta(hours=12)
+NEW_SCHEDULE_PATH: Final = Path("schedule.new.json")
+SCHEDULE_MARGIN: Final = datetime.timedelta(hours=24)
 MAX_SCHEDULE_DURATION: Final = datetime.timedelta(hours=48)
 
 
@@ -140,7 +141,7 @@ def main() -> None:
     )
 
     schedule = Schedule(entries=remaining_entries + entries)
-    with SCHEDULE_PATH.open("w", encoding="utf-8") as jsonfile:
+    with NEW_SCHEDULE_PATH.open("w", encoding="utf-8") as jsonfile:
         jsonfile.write(schedule.model_dump_json())
 
 

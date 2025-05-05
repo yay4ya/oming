@@ -35,9 +35,10 @@ jobs:
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -f schedule.json ]; then
+          if [ -f schedule.new.json ]; then
             git checkout --orphan schedule-temp
             git rm -rf . || true
+            mv schedule.new.json schedule.json
             git add schedule.json
             git commit -m "Update schedule.json"
             git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}.git

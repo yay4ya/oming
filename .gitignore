@@ -25,3 +25,4 @@ dist-ssr
 
 # Schedules
 /schedule.json
+/schedule.new.json
