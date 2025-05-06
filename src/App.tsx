@@ -136,8 +136,8 @@ function App() {
             <div className="w-full h-full max-h-full max-w-full flex flex-col p-4 gap-4 m-auto justify-between sm:justify-center">
               <div className="w-full aspect-video mx-auto" style={{ maxWidth: "calc((100vh - 7rem) * 16 / 9)" }}>
                 <YouTube
-                  className="w-full overflow-hidden"
-                  iframeClassName="w-full h-auto aspect-video rounded-xl m-auto overflow-hidden"
+                  className="w-full"
+                  iframeClassName="w-full h-auto aspect-video rounded-xl m-auto shadow-2xl"
                   opts={{
                     playerVars: {
                       autoplay: 1,
