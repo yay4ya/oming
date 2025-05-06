@@ -5,7 +5,7 @@ import { useAtom } from 'jotai'
 import { useInterval } from '@/hooks'
 import VolumeControl from '@/components/VolumeControl'
 import ScheduleList from '@/components/ScheduleList'
-import iconLarge from '@/assets/icon_large.png'
+import About from '@/components/About'
 import { type ScheduleEntry } from '@/types'
 import { videoDurationSeconds, getLiveEntry, formatTime, getVideoURL, getThumbnailURL, getLiveVideoElapsedSeconds } from '@/utils'
 import { scheduleAtom } from '@/atoms'
@@ -14,7 +14,6 @@ function App() {
   const [schedule, refreshSchedule] = useAtom(scheduleAtom)
   const [liveEntry, setLiveEntry] = React.useState<ScheduleEntry>()
   const [videoTime, setVideoTime] = React.useState(0)
-  const [doSync, setDoSync] = React.useState(false)
   const playerRef = React.useRef<YouTubePlayer | null>(null)
 
   React.useEffect(() => {
@@ -24,14 +23,14 @@ function App() {
     }
   }, [schedule])
 
-  const syncVideoTime = React.useCallback(() => {
-    if (!playerRef.current || !liveEntry) return
-    const duration = playerRef.current.getDuration()
+  const syncVideoTime = React.useCallback((player: YouTubePlayer) => {
+    if (!liveEntry) return
+    const duration = player.getDuration()
     const elapsedSeconds = getLiveVideoElapsedSeconds(liveEntry)
     if (elapsedSeconds > duration) {
       refreshSchedule()
-    } else {
-      playerRef.current.seekTo(elapsedSeconds)
+    } else if (Math.abs(player.getCurrentTime() - elapsedSeconds) > 1) {
+      player.seekTo(elapsedSeconds)
     }
   }, [liveEntry, refreshSchedule])
 
@@ -44,23 +43,26 @@ function App() {
         startSeconds: getLiveVideoElapsedSeconds(liveEntry),
       })
     }
-    setDoSync(true)
+    syncVideoTime(player)
   }, [liveEntry])
 
-  const handleVideoPlay = React.useCallback((_event: YouTubeEvent) => {
-    if (doSync) {
-      syncVideoTime()
-      setDoSync(false)
-    }
-  }, [doSync, syncVideoTime])
+  const handleVideoPlay = React.useCallback((event: YouTubeEvent) => {
+    const player = event.target
+    syncVideoTime(player)
+  }, [syncVideoTime])
 
   const handleVideoPause = React.useCallback((_event: YouTubeEvent) => {
-    setDoSync(true)
+    // const player = event.target
+    // syncVideoTime(player)
   }, [])
 
-  const handleVideoEnd = React.useCallback(() => {
-    refreshSchedule()
-    setDoSync(true)
+  const handleVideoEnd = React.useCallback((event: YouTubeEvent) => {
+    refreshSchedule().then(() => {
+      const player = event.target
+      syncVideoTime(player)
+    }).catch((error) => {
+      console.error('Failed to refresh schedule:', error)
+    })
   }, [refreshSchedule])
 
   useInterval(() => {
@@ -68,16 +70,16 @@ function App() {
   }, 500);
 
   React.useEffect(() => {
-    if (!liveEntry) return
+    if (!liveEntry || !playerRef.current) return
     const liveTime = getLiveVideoElapsedSeconds(liveEntry)
     if (Math.abs(videoTime - liveTime) > 60) {
-      syncVideoTime()
+      syncVideoTime(playerRef.current)
     }
-  }, [videoTime, getLiveVideoElapsedSeconds])
+  }, [videoTime])
 
   return (
     <>
-      <div className="w-screen h-screen relative overflow-hidden flex items-center justify-center">
+      <div className="w-screen h-screen overflow-hidden flex items-center justify-center">
         {liveEntry ? (
           <>
             <div className="absolute top-0 left-0 w-screen h-screen z-[-1] opacity-40">
@@ -105,11 +107,11 @@ function App() {
                 />
               </div>
               <div
-                className="shrink-0 h-16 w-full flex items-center justify-start rounded-lg m-auto p-4 shadow-2xl bg-white/40 backdrop-blur-3xl border border-white/40 text-gray-700 gap-4"
+                className="shrink-0 h-16 w-full flex items-center justify-start rounded-lg m-auto p-4 shadow-2xl bg-white/40 border border-white/40 text-gray-700 gap-4"
                 style={{ maxWidth: 'calc((100vh - 7rem) * 16 / 9)' }}
 
               >
-                <img src={iconLarge} alt="Icon" className="w-12 h-12 rounded-lg border border-gray-200" />
+                <About className="w-12 h-12 shrink-0" />
                 <a href={getVideoURL(liveEntry.video.id)} target="_blank" rel="noopener noreferrer" className="line-clamp-1">
                   {liveEntry.video.title}
                 </a>

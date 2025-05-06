@@ -43,7 +43,7 @@ function VolumeControl({ player, ...props }: React.HTMLProps<HTMLDivElement> & {
   return (
     <div {...props}>
       <VolumeIcon
-        className="z-10 relative cursor-pointer"
+        className="relative cursor-pointer z-10"
         onMouseEnter={() => setShowVolume(true)}
         onClick={() => setMute((prev: boolean) => !prev)}
       />
@@ -52,7 +52,7 @@ function VolumeControl({ player, ...props }: React.HTMLProps<HTMLDivElement> & {
         style={{ display: showVolume ? 'block' : 'none' }}
         onMouseLeave={() => setShowVolume(false)}
       >
-        <div className="absolute bottom-1/2 -left-1/2 w-fit bg-gray">
+        <div className="absolute bottom-1/2 -right-1/2 w-fit">
           <div className="bg-white/10 border border-white/40 rounded-lg backdrop-blur-lg shadow-xl mb-[4rem] py-4">
             <input
               type="range"
