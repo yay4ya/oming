@@ -2,7 +2,7 @@ import React from 'react'
 import YouTube, { type YouTubeEvent, type YouTubePlayer } from 'react-youtube'
 import { useAtom } from 'jotai'
 
-import { useInterval, useResizeObserver } from '@/hooks'
+import { useInterval } from '@/hooks'
 import VolumeControl from '@/components/VolumeControl'
 import SchedulePopup from '@/components/SchedulePopup'
 import ScheduleList, { type ScheduleListHandler } from '@/components/ScheduleList'
