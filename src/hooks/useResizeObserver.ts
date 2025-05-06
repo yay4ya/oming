@@ -1,5 +1,10 @@
-import React from 'react';
+import * as React from "react";
 
+/**
+ * This hook is used to observe the size of an element.
+ * @param ref The reference to the element to observe.
+ * @returns The width and height of the observed element.
+ */
 export const useResizeObserver = (ref: React.RefObject<HTMLElement | null>): { width: number; height: number } => {
   const [dimensions, setDimensions] = React.useState({ width: 0, height: 0 });
 
@@ -24,7 +29,7 @@ export const useResizeObserver = (ref: React.RefObject<HTMLElement | null>): { w
     return () => {
       resizeObserver.unobserve(observeTarget);
     };
-  }, [ref]);
+  }, [ref.current]);
 
   return dimensions;
 };
