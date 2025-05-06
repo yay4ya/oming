@@ -1,12 +1,13 @@
 import React from 'react'
 import YouTube, { type YouTubeEvent, type YouTubePlayer } from 'react-youtube'
 import { atom, useAtom } from 'jotai'
-import { ListVideoIcon, VolumeXIcon, VolumeIcon as Volume0Icon, Volume1Icon, Volume2Icon } from 'lucide-react'
+import { ListVideoIcon } from 'lucide-react'
 
 import { useInterval } from '@/hooks'
+import VolumeControl from '@/components/VolumeControl'
 import iconLarge from '@/assets/icon_large.png'
 
-const SCHEDULE_URL = 'https://gist.githubusercontent.com/yay4ya/223a7744bc0003e4dcef84b60cd9352f/raw/f13963f17980c70365916acf074f623f955dc101/oming.json'
+const SCHEDULE_URL = 'https://gist.githubusercontent.com/yay4ya/223a7744bc0003e4dcef84b60cd9352f/raw/88e2da4da93aad98aaf9b9e65d8383882e8b0d27/oming.json'
 
 const scheduleDataAtom = atom<Schedule | null>(null)
 const scheduleAtom = atom(
@@ -131,76 +132,7 @@ function formatDate(date: Date): string {
   return `${month}/${dt}  ${hours}:${minutes}`
 }
 
-function VolumeControl({ player, ...props }: React.HTMLProps<HTMLDivElement> & { player?: YouTubePlayer }) {
-  const [volume, setVolume] = React.useState(player?.getVolume() ?? 100)
-  const [mute, setMute] = React.useState(player?.isMuted() ?? false)
-  const [showVolume, setShowVolume] = React.useState(false)
 
-  React.useEffect(() => {
-    if (player) {
-      setVolume(player.getVolume())
-    }
-  }, [player])
-
-  const handleVolumeChange = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const newVolume = parseInt(event.target.value, 10)
-    setVolume(newVolume)
-    if (player && player.g) {
-      player.setVolume(newVolume)
-    }
-  }, [player])
-
-  const VolumeIcon = React.useMemo(() => {
-    if (mute) return VolumeXIcon
-    if (volume > 66) {
-      return Volume2Icon
-    } else if (volume > 33) {
-      return Volume1Icon
-    } else if (volume > 0) {
-      return Volume0Icon
-    }
-    return VolumeXIcon
-  }, [volume, mute])
-
-  React.useEffect(() => {
-    if (player && player.g) {
-      if (mute) player.mute()
-      else player.unMute()
-    }
-  }, [player, mute])
-
-  return (
-    <div {...props}>
-      <VolumeIcon
-        className="z-10 relative cursor-pointer"
-        onMouseEnter={() => setShowVolume(true)}
-        onClick={() => setMute((prev: boolean) => !prev)}
-      />
-      <div
-        className="relative w-full h-full"
-        style={{ display: showVolume ? 'block' : 'none' }}
-        onMouseLeave={() => setShowVolume(false)}
-      >
-        <div className="absolute bottom-1/2 -left-1/2 bg-white/10 border border-white/40 rounded-lg backdrop-blur-lg shadow-xl w-fit">
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={mute ? 0 : volume}
-            disabled={mute}
-            onChange={handleVolumeChange}
-            className="h-[100px] w-[3rem] cursor-pointer mt-[1rem] mb-[3rem] relative "
-            style={{
-              writingMode: 'vertical-lr',
-              direction: 'rtl',
-              verticalAlign: 'middle',
-            }}
-          />
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function ScheduleList({ schedule, ...props }: React.HTMLProps<HTMLDivElement> & { schedule: Schedule }) {
   const [show, setShow] = React.useState(false)
