@@ -1,44 +1,49 @@
-import React from 'react'
-import { VolumeXIcon, VolumeIcon as Volume0Icon, Volume1Icon, Volume2Icon } from 'lucide-react'
-import { type YouTubePlayer } from 'react-youtube'
+import { VolumeIcon as Volume0Icon, Volume1Icon, Volume2Icon, VolumeXIcon } from "lucide-react";
+import React from "react";
+import type { YouTubePlayer } from "react-youtube";
 
 function VolumeControl({ player, ...props }: React.HTMLProps<HTMLDivElement> & { player?: YouTubePlayer }) {
-  const [volume, setVolume] = React.useState(player?.getVolume() ?? 100)
-  const [mute, setMute] = React.useState(player?.isMuted() ?? false)
-  const [showVolume, setShowVolume] = React.useState(false)
+  const [volume, setVolume] = React.useState(player?.getVolume() ?? 100);
+  const [mute, setMute] = React.useState(player?.isMuted() ?? false);
+  const [showVolume, setShowVolume] = React.useState(false);
 
   React.useEffect(() => {
     if (player) {
-      setVolume(player.getVolume())
+      setVolume(player.getVolume());
     }
-  }, [player])
+  }, [player]);
 
-  const handleVolumeChange = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const newVolume = parseInt(event.target.value, 10)
-    setVolume(newVolume)
-    if (player && player.g) {
-      player.setVolume(newVolume)
-    }
-  }, [player])
+  const handleVolumeChange = React.useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const newVolume = Number.parseInt(event.target.value, 10);
+      setVolume(newVolume);
+      if (player?.g) {
+        player.setVolume(newVolume);
+      }
+    },
+    [player],
+  );
 
   const VolumeIcon = React.useMemo(() => {
-    if (mute) return VolumeXIcon
+    if (mute) return VolumeXIcon;
     if (volume > 66) {
-      return Volume2Icon
-    } else if (volume > 33) {
-      return Volume1Icon
-    } else if (volume > 0) {
-      return Volume0Icon
+      return Volume2Icon;
     }
-    return VolumeXIcon
-  }, [volume, mute])
+    if (volume > 33) {
+      return Volume1Icon;
+    }
+    if (volume > 0) {
+      return Volume0Icon;
+    }
+    return VolumeXIcon;
+  }, [volume, mute]);
 
   React.useEffect(() => {
-    if (player && player.g) {
-      if (mute) player.mute()
-      else player.unMute()
+    if (player?.g) {
+      if (mute) player.mute();
+      else player.unMute();
     }
-  }, [player, mute])
+  }, [player, mute]);
 
   return (
     <div {...props}>
@@ -49,7 +54,7 @@ function VolumeControl({ player, ...props }: React.HTMLProps<HTMLDivElement> & {
       />
       <div
         className="relative w-full h-full"
-        style={{ display: showVolume ? 'block' : 'none' }}
+        style={{ display: showVolume ? "block" : "none" }}
         onMouseLeave={() => setShowVolume(false)}
       >
         <div className="absolute bottom-1/2 -right-1/2 w-fit">
@@ -63,16 +68,16 @@ function VolumeControl({ player, ...props }: React.HTMLProps<HTMLDivElement> & {
               onChange={handleVolumeChange}
               className="h-[100px] w-[3rem] cursor-pointer py-4 relative "
               style={{
-                writingMode: 'vertical-lr',
-                direction: 'rtl',
-                verticalAlign: 'middle',
+                writingMode: "vertical-lr",
+                direction: "rtl",
+                verticalAlign: "middle",
               }}
             />
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default VolumeControl
+export default VolumeControl;

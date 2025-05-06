@@ -16,12 +16,12 @@ export const useResizeObserver = (ref: React.RefObject<HTMLElement | null>): { w
     }
 
     const resizeObserver = new ResizeObserver((entries) => {
-      entries.forEach((entry) => {
+      for (const entry of entries) {
         setDimensions({
           width: entry.contentRect.width,
           height: entry.contentRect.height,
         });
-      });
+      }
     });
 
     resizeObserver.observe(observeTarget);

@@ -9,11 +9,12 @@
 import datetime
 import logging
 import random
+import uuid
 from pathlib import Path
 from typing import Annotated, Final
 
 import yt_dlp
-from pydantic import BaseModel, AfterValidator
+from pydantic import AfterValidator, BaseModel, Field
 
 CHANNEL_ID: Final = "UC1cnByKe24JjTv38tH_7BYw"
 TIME_ZONE: Final = datetime.timezone.utc
@@ -37,6 +38,7 @@ class Video(BaseModel):
 
 
 class ScheduleEntry(BaseModel):
+    id: str = Field(default_factory=lambda: uuid.uuid4().hex)
     video: Video
     start: datetime.datetime
 
