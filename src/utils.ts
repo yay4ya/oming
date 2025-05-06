@@ -52,6 +52,12 @@ export function getLiveEntry(schedule: Schedule): ScheduleEntry | null {
   return liveEntry || null
 }
 
+export function getLiveVideoElapsedSeconds(liveEntry: ScheduleEntry): number {
+  const startTime = entryStart(liveEntry)
+  const currentTime = getCurrentTime()
+  return (currentTime.getTime() - startTime.getTime()) / 1000
+}
+
 export function getVideoURL(videoId: string): string {
   return `https://www.youtube.com/watch?v=${videoId}`
 }

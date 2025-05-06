@@ -6,42 +6,46 @@ import { useInterval } from '@/hooks'
 import VolumeControl from '@/components/VolumeControl'
 import ScheduleList from '@/components/ScheduleList'
 import iconLarge from '@/assets/icon_large.png'
-import { getCurrentTime, entryStart, videoDurationSeconds, getLiveEntry, formatTime, getVideoURL, getThumbnailURL } from '@/utils'
+import { type ScheduleEntry } from '@/types'
+import { videoDurationSeconds, getLiveEntry, formatTime, getVideoURL, getThumbnailURL, getLiveVideoElapsedSeconds } from '@/utils'
 import { scheduleAtom } from '@/atoms'
 
 function App() {
   const [schedule, refreshSchedule] = useAtom(scheduleAtom)
+  const [liveEntry, setLiveEntry] = React.useState<ScheduleEntry>()
   const [videoTime, setVideoTime] = React.useState(0)
   const [doSync, setDoSync] = React.useState(false)
   const playerRef = React.useRef<YouTubePlayer | null>(null)
 
-  const liveEntry = React.useMemo(() => {
-    if (!schedule) return null
-    return getLiveEntry(schedule)
+  React.useEffect(() => {
+    const liveEntry = getLiveEntry(schedule)
+    if (liveEntry) {
+      setLiveEntry(liveEntry)
+    }
   }, [schedule])
 
-  const getLiveVideoElapsedSeconds = React.useCallback(() => {
-    if (!liveEntry) return 0
-    const startTime = entryStart(liveEntry)
-    const currentTime = getCurrentTime()
-    return (currentTime.getTime() - startTime.getTime()) / 1000
-  }, [liveEntry])
-
   const syncVideoTime = React.useCallback(() => {
-    if (!playerRef.current) return
+    if (!playerRef.current || !liveEntry) return
     const duration = playerRef.current.getDuration()
-    const elapsedSeconds = getLiveVideoElapsedSeconds()
+    const elapsedSeconds = getLiveVideoElapsedSeconds(liveEntry)
     if (elapsedSeconds > duration) {
       refreshSchedule()
     } else {
       playerRef.current.seekTo(elapsedSeconds)
     }
-  }, [getLiveVideoElapsedSeconds, refreshSchedule])
+  }, [liveEntry, refreshSchedule])
 
   const handleVideoReady = React.useCallback((event: YouTubeEvent) => {
-    playerRef.current = event.target
+    const player = event.target
+    playerRef.current = player
+    if (liveEntry) {
+      player.loadVideoById({
+        videoId: liveEntry.video.id,
+        startSeconds: getLiveVideoElapsedSeconds(liveEntry),
+      })
+    }
     setDoSync(true)
-  }, [getLiveVideoElapsedSeconds])
+  }, [liveEntry])
 
   const handleVideoPlay = React.useCallback((_event: YouTubeEvent) => {
     if (doSync) {
@@ -64,7 +68,8 @@ function App() {
   }, 500);
 
   React.useEffect(() => {
-    const liveTime = getLiveVideoElapsedSeconds()
+    if (!liveEntry) return
+    const liveTime = getLiveVideoElapsedSeconds(liveEntry)
     if (Math.abs(videoTime - liveTime) > 60) {
       syncVideoTime()
     }
@@ -87,7 +92,6 @@ function App() {
                 <YouTube
                   className="w-full h-full overflow-hidden"
                   iframeClassName="w-fit h-full rounded-xl aspect-video m-auto overflow-hidden"
-                  videoId={liveEntry.video.id}
                   opts={{
                     playerVars: {
                       autoplay: 1,

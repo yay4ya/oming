@@ -14,7 +14,6 @@ function ScheduleList({ schedule, ...props }: React.HTMLProps<HTMLDivElement> & 
   React.useEffect(() => {
     if (show) {
       const liveEntryElement = document.querySelector(`div[data-live="true"]`)
-      console.log(liveEntryElement)
       if (liveEntryElement) {
         liveEntryElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }
@@ -32,9 +31,9 @@ function ScheduleList({ schedule, ...props }: React.HTMLProps<HTMLDivElement> & 
         style={{ display: show ? 'block' : 'none', maxHeight: 'calc(100vh - 150px)' }}
       >
         <div className="relative h-full overflow-y-auto p-4">
-          {schedule.entries.map(entry => (
+          {schedule.entries.map((entry, index) => (
             <div
-              key={entry.video.id}
+              key={index}
               className={`mt-2 h-[5rem] flex gap-2 items-center px-3 py-2 rounded-lg ${liveEntry?.video.id == entry.video.id ? 'bg-white/50' : ''}`}
               data-live={liveEntry?.video.id == entry.video.id}
             >
