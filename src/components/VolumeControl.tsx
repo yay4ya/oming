@@ -47,6 +47,13 @@ function VolumeControl({ player, ...props }: React.HTMLProps<HTMLDivElement> & {
 
   return (
     <div {...props}>
+      {showVolume && (
+        <div
+          className="absolute top-0 left-0 w-full h-full"
+          onClick={() => setShowVolume(false)}
+          onKeyDown={(e) => e.stopPropagation()}
+        />
+      )}
       <VolumeIcon
         className="relative cursor-pointer z-10"
         onMouseEnter={() => setShowVolume(true)}
