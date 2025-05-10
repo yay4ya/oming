@@ -11,8 +11,8 @@ function About({ ...props }: React.HTMLProps<HTMLDivElement>) {
       </button>
       <div className="fixed top-0 left-0 w-screen h-screen z-50" style={{ display: show ? "block" : "none" }}>
         <div className="absolute top-0 left-0 w-full h-full" onClick={() => setShow(false)} onKeyDown={undefined} />
-        <div className="w-full h-full flex items-center justify-center">
-          <div className="w-[400px] max-w-svw h-fit m-auto bg-white/40 backdrop-blur-xl border border-white/40 shadow-xl rounded-xl p-6">
+        <div className="w-screen h-dvh flex items-center justify-center p-4">
+          <div className="w-[400px] h-fit max-w-svw m-auto bg-white/40 backdrop-blur-xl border border-white/40 shadow-xl rounded-xl p-6">
             <div className="flex flex-col items-center justify-center gap-4">
               <img
                 src={iconLarge}
