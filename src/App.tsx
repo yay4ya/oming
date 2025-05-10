@@ -123,17 +123,17 @@ function App() {
 
   return (
     <>
-      <div className="w-screen h-screen overflow-x-hidden overflow-y-auto flex items-center justify-center">
+      <div className="w-screen h-dvh overflow-x-hidden overflow-y-auto flex items-center justify-center">
         {liveEntry ? (
           <>
-            <div className="absolute top-0 left-0 w-screen h-screen z-[-1] opacity-40">
+            <div className="absolute top-0 left-0 w-full h-dvh z-[-1] opacity-40">
               <img
                 className="object-cover w-full h-full blur-xl brightness-105"
                 src={getThumbnailURL(liveEntry.video.id)}
                 alt="Live stream thumbnail"
               />
             </div>
-            <div className="w-full h-full max-h-full max-w-full flex flex-col p-4 gap-4 m-auto justify-between sm:justify-center">
+            <div className="w-full h-full max-h-full max-w-full flex flex-col pb-safe pt-4 px-4 gap-4 m-auto justify-between sm:justify-center">
               <div className="w-full aspect-video mx-auto" style={{ maxWidth: "calc((100vh - 7rem) * 16 / 9)" }}>
                 <YouTube
                   className="w-full"

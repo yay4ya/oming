@@ -13,16 +13,10 @@ function VolumeControl({ player, ...props }: React.HTMLProps<HTMLDivElement> & {
     }
   }, [player]);
 
-  const handleVolumeChange = React.useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const newVolume = Number.parseInt(event.target.value, 10);
-      setVolume(newVolume);
-      if (player?.g) {
-        player.setVolume(newVolume);
-      }
-    },
-    [player],
-  );
+  const handleVolumeChange = React.useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = Number.parseInt(event.target.value, 10);
+    setVolume(newVolume);
+  }, []);
 
   const VolumeIcon = React.useMemo(() => {
     if (mute) return VolumeXIcon;
@@ -45,8 +39,21 @@ function VolumeControl({ player, ...props }: React.HTMLProps<HTMLDivElement> & {
     }
   }, [player, mute]);
 
+  React.useEffect(() => {
+    if (player?.g) {
+      player.setVolume(volume);
+    }
+  }, [player, volume]);
+
   return (
     <div {...props}>
+      {showVolume && (
+        <div
+          className="absolute top-0 left-0 w-full h-full"
+          onClick={() => setShowVolume(false)}
+          onKeyDown={(e) => e.stopPropagation()}
+        />
+      )}
       <VolumeIcon
         className="relative cursor-pointer z-10"
         onMouseEnter={() => setShowVolume(true)}

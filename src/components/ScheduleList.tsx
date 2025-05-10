@@ -39,7 +39,7 @@ const ScheduleList = React.forwardRef(
             <div className="shrink-0 w-[100px]">
               <img
                 alt={entry.video.title}
-                src={getThumbnailURL(entry.video.id, "default")}
+                src={getThumbnailURL(entry.video.id, "mqdefault")}
                 className="aspect-video object-cover overflow-hidden rounded-lg"
                 width={100}
               />
